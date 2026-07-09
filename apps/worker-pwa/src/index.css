@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-white text-black text-base antialiased;
+  font-size: 18px;
+}
+
+.btn-primary {
+  @apply bg-black text-white font-bold rounded-xl px-6 py-4 min-h-tap min-w-tap text-lg w-full;
+}
+
+.btn-secondary {
+  @apply bg-white text-black border-2 border-black font-bold rounded-xl px-6 py-4 min-h-tap text-lg w-full;
+}
+
+.card {
+  @apply border-2 border-black rounded-2xl p-6 mb-4;
+}
+
+.input {
+  @apply border-2 border-black rounded-xl px-4 py-4 text-lg w-full min-h-tap;
+}
