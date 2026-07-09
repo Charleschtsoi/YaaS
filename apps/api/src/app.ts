@@ -5,6 +5,7 @@ import { workerRoutes } from "./routes/workers.js";
 import { workerFeedRoutes } from "./routes/worker-feed.js";
 import { taskRoutes, proofRoutes } from "./routes/tasks.js";
 import { webhookRoutes } from "./routes/webhooks.js";
+import { config } from "./config.js";
 
 export function createApp() {
   const app = new Hono();
@@ -12,11 +13,7 @@ export function createApp() {
   app.use(
     "*",
     cors({
-      origin: [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:3000",
-      ],
+      origin: config.corsOrigins,
       allowHeaders: ["Content-Type", "Authorization", "X-API-Key"],
       allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     })

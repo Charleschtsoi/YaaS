@@ -28,7 +28,7 @@ export async function uploadProof(
   contentType: string
 ): Promise<string> {
   if (!config.r2.accessKeyId || config.isDev) {
-    const localUrl = `http://localhost:${config.port}/proofs/${key}`;
+    const localUrl = `${config.publicApiUrl}/proofs/${key}`;
     await saveLocalProof(key, body);
     return localUrl;
   }
@@ -49,7 +49,7 @@ export async function uploadProof(
 
 export async function getSignedProofUrl(key: string): Promise<string> {
   if (!config.r2.accessKeyId) {
-    return `http://localhost:${config.port}/proofs/${key}`;
+    return `${config.publicApiUrl}/proofs/${key}`;
   }
 
   return getSignedUrl(

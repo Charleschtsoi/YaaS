@@ -1,6 +1,9 @@
 # YAAS — Human-as-a-Service Platform
 
-MCP-compatible API that lets AI agents post tasks for humans, route to qualified workers, and release payment on verified completion.
+**YAAS** lets AI agents request real-world human tasks via MCP. Clone this repo, deploy the API and apps to public HTTPS endpoints, configure your URLs in `.env`, then connect any MCP client using `requestHuman`.
+
+- **Production:** [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- **Local dev:** [docs/LOCAL_DEV.md](docs/LOCAL_DEV.md) (optional, same-machine only)
 
 ## Architecture
 
@@ -10,63 +13,28 @@ MCP-compatible API that lets AI agents post tasks for humans, route to qualified
 - **Agent Dashboard** — Register agents, manage tasks, MCP setup
 - **Payments** — Stripe Connect escrow (USDC deferred to v1.1)
 
-## Quick Start
+## Quick Start (Production)
 
-### Prerequisites
-
-- Node.js 20+
-- pnpm 9+
-- Docker (for Postgres + Redis)
-
-### Setup
-
-```bash
-# Clone and install
-pnpm install
-
-# Start Postgres + Redis
-docker compose up -d
-
-# Run migrations
-DATABASE_URL=postgresql://yaas:yaas@localhost:5432/yaas pnpm db:migrate
-
-# Copy env and configure
-cp .env.example .env
-# Set SKIP_STRIPE=true for local dev without Stripe keys
-
-# Start all apps
-SKIP_STRIPE=true pnpm dev
-```
-
-Services:
-- API: http://localhost:3000
-- Agent Dashboard: http://localhost:5173
-- Worker PWA: http://localhost:5174
-
-### Register an Agent
-
-1. Open http://localhost:5173
-2. Register and save your API key
-3. Configure MCP (see MCP Setup page)
-
-### Register a Worker
-
-1. Open http://localhost:5174
-2. Create account
-3. Browse and claim tasks
+1. Copy [`.env.example`](.env.example) and set your public URLs
+2. Deploy API to Fly.io — see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+3. Deploy dashboard + worker PWA to Cloudflare Pages with `VITE_API_URL=https://api.your-domain.com`
+4. Register an agent at your dashboard URL, copy the API key
+5. Connect MCP (see below)
 
 ## MCP Configuration
 
-Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+`YAAS_API_URL` must point to your **public** API — not localhost — for agents and mobile workers on different machines.
+
+Add to Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "yaas": {
       "command": "npx",
-      "args": ["tsx", "/path/to/YAAS/apps/mcp/src/index.ts"],
+      "args": ["tsx", "/path/to/YaaS/apps/mcp/src/index.ts"],
       "env": {
-        "YAAS_API_URL": "http://localhost:3000",
+        "YAAS_API_URL": "https://api.your-domain.com",
         "YAAS_API_KEY": "sk_yaas_..."
       }
     }
@@ -89,7 +57,7 @@ Add to Claude Desktop config (`~/Library/Application Support/Claude/claude_deskt
 
 ## API Reference
 
-Base URL: `/v1`
+Base URL: `https://api.your-domain.com/v1`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -107,48 +75,37 @@ Base URL: `/v1`
 | GET | /workers/me/earnings | JWT | Payout history |
 | GET | /health | — | Health check |
 
-## Testing
-
-```bash
-# E2E test (requires Docker Postgres)
-docker compose up -d
-DATABASE_URL=postgresql://yaas:yaas@localhost:5432/yaas_test \
-  SKIP_STRIPE=true SKIP_QUEUES=true \
-  pnpm --filter @yaas/api test
-
-# Load test (API must be running)
-YAAS_API_KEY=sk_yaas_... tsx apps/api/tests/load/concurrent-tasks.ts
-```
-
-## Deployment
-
-### Fly.io (API)
-
-```bash
-fly launch --config fly.toml
-fly secrets set DATABASE_URL=... REDIS_URL=... STRIPE_SECRET_KEY=... JWT_SECRET=...
-fly deploy
-```
-
-### Managed Services
-
-- **Neon** — PostgreSQL
-- **Upstash** — Redis for BullMQ
-- **Cloudflare R2** — Proof media storage
-- **Cloudflare Pages** — Agent dashboard + Worker PWA static deploy
-
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| DATABASE_URL | PostgreSQL connection string |
-| REDIS_URL | Redis connection string |
-| JWT_SECRET | Worker JWT signing secret |
-| STRIPE_SECRET_KEY | Stripe API secret key |
-| STRIPE_WEBHOOK_SECRET | Stripe webhook signing secret |
-| R2_* | Cloudflare R2 credentials |
-| SKIP_STRIPE | Bypass Stripe in dev/test |
-| SKIP_QUEUES | Process verification inline (test mode) |
+| `PUBLIC_API_URL` | Public HTTPS base URL for API (proof links, redirects) |
+| `CORS_ORIGINS` | Comma-separated allowed origins (dashboard + PWA URLs) |
+| `WORKER_APP_URL` | Deployed worker PWA URL (Stripe Connect redirects) |
+| `YAAS_API_URL` | Same as `PUBLIC_API_URL` — used by MCP client |
+| `DATABASE_URL` | PostgreSQL connection string (Neon) |
+| `REDIS_URL` | Redis connection string (Upstash) |
+| `JWT_SECRET` | Worker JWT signing secret |
+| `STRIPE_SECRET_KEY` | Stripe API secret key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `R2_PUBLIC_URL` | Public CDN URL for proof media |
+| `VITE_API_URL` | API URL baked into frontends at build time |
+| `SKIP_STRIPE` | Bypass Stripe in dev/test |
+| `SKIP_QUEUES` | Process verification inline (test mode) |
+
+See [`.env.example`](.env.example) for production template and [`.env.local.example`](.env.local.example) for local dev.
+
+## Testing
+
+```bash
+# E2E test (requires Docker Postgres) — see docs/LOCAL_DEV.md
+docker compose up -d
+SKIP_STRIPE=true SKIP_QUEUES=true pnpm --filter @yaas/api test
+
+# Load test (API must be running at your configured URL)
+YAAS_API_URL=https://api.your-domain.com YAAS_API_KEY=sk_yaas_... \
+  tsx apps/api/tests/load/concurrent-tasks.ts
+```
 
 ## Elderly-Friendly Worker UI
 
@@ -160,4 +117,3 @@ fly deploy
 ## License
 
 MIT — see [LICENSE](LICENSE).
-

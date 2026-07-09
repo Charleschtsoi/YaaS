@@ -2,14 +2,19 @@ import { getApiKey } from "../api";
 
 export default function McpSetup() {
   const apiKey = getApiKey() ?? "YOUR_API_KEY";
-  const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+  const configuredUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = configuredUrl ?? "https://api.your-domain.com";
+  const isLocalhost =
+    !configuredUrl ||
+    configuredUrl.includes("localhost") ||
+    configuredUrl.includes("127.0.0.1");
 
   const claudeConfig = JSON.stringify(
     {
       mcpServers: {
         yaas: {
           command: "npx",
-          args: ["tsx", "apps/mcp/src/index.ts"],
+          args: ["tsx", "/path/to/YaaS/apps/mcp/src/index.ts"],
           env: {
             YAAS_API_URL: apiUrl,
             YAAS_API_KEY: apiKey,
@@ -27,7 +32,29 @@ export default function McpSetup() {
       <p className="text-gray-600 mb-6">
         Connect Claude Desktop (or any MCP client) to the YAAS{" "}
         <code className="bg-gray-100 px-1 rounded">requestHuman</code> tool.
+        Set <code className="bg-gray-100 px-1 rounded">YAAS_API_URL</code> to
+        your public API URL so agents and mobile workers can reach it.
       </p>
+
+      {isLocalhost && (
+        <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
+          <p className="text-sm text-yellow-900 font-medium mb-1">
+            Localhost detected
+          </p>
+          <p className="text-sm text-yellow-800">
+            Localhost only works when Claude and the API run on the same machine.
+            For production, set{" "}
+            <code className="bg-white px-1 rounded">VITE_API_URL</code> to your
+            public API (e.g.{" "}
+            <code className="bg-white px-1 rounded">
+              https://api.your-domain.com
+            </code>
+            ) and rebuild the dashboard. See{" "}
+            <code className="bg-white px-1 rounded">docs/DEPLOYMENT.md</code>{" "}
+            in the repo.
+          </p>
+        </div>
+      )}
 
       <h3 className="font-semibold mb-2">Claude Desktop Config</h3>
       <p className="text-sm text-gray-600 mb-2">

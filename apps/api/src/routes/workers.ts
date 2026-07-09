@@ -160,11 +160,13 @@ workerRoutes.post("/me/connect-onboarding", async (c) => {
   }
 
   const stripe = createStripeClient(config.stripeSecretKey);
+  const workerAppOrigin =
+    c.req.header("origin") ?? config.workerAppUrl;
   const url = await createConnectOnboardingLink(
     stripe,
     worker.stripeConnectId,
-    `${c.req.header("origin") ?? "http://localhost:5174"}/profile`,
-    `${c.req.header("origin") ?? "http://localhost:5174"}/profile`
+    `${workerAppOrigin}/profile`,
+    `${workerAppOrigin}/profile`
   );
 
   return c.json({ url });
